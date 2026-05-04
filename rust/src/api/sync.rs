@@ -863,6 +863,46 @@ pub fn get_transaction_history(
     })
 }
 
+pub fn get_export_birthday_height(
+    db_path: String,
+    network: String,
+    account_uuid: String,
+) -> Result<u64, String> {
+    catch(|| {
+        let _network = keys::parse_network(&network)?;
+        let anchor = wallet_sync::get_export_birthday_anchor(&db_path, &account_uuid)?;
+        Ok(anchor.block_height)
+    })
+}
+
+pub fn get_block_time(lightwalletd_url: String, height: u64) -> Result<u64, String> {
+    catch(|| fetch_block_time(&lightwalletd_url, height))
+}
+
+fn fetch_block_time(lightwalletd_url: &str, block_height: u64) -> Result<u64, String> {
+    use zcash_client_backend::proto::service::BlockId;
+
+    let rt = tokio::runtime::Runtime::new().map_err(|e| format!("tokio: {e}"))?;
+    rt.block_on(async {
+        let mut client = sync_engine::open_lwd_channel(lightwalletd_url)
+            .await
+            .map_err(|e| e.to_string())?;
+        let block = tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            client.get_block(BlockId {
+                height: block_height,
+                hash: vec![],
+            }),
+        )
+        .await
+        .map_err(|_| "get_block: timed out waiting for response".to_string())?
+        .map_err(|e| format!("get_block: {e}"))?
+        .into_inner();
+
+        Ok(u64::from(block.time))
+    })
+}
+
 #[frb(sync)]
 pub fn get_transaction_detail(
     db_path: String,
