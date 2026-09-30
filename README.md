@@ -39,6 +39,23 @@ fvm flutter run -d macos \
   --dart-define=VIZOR_RELAY_API_URL=http://127.0.0.1:18790/v1/forecast
 ```
 
+If this host lacks the upstream macOS development signing profile, create an
+unsigned local debug app instead. Use the repository's Ruby version and pinned
+CocoaPods from `Gemfile`:
+
+```bash
+bundle install
+fvm flutter build macos --debug --config-only \
+  --dart-define=ZCASH_DEFAULT_NETWORK=main \
+  --dart-define=VIZOR_RELAY_API_URL=http://127.0.0.1:18790/v1/forecast
+bundle exec pod install --deployment --project-directory=macos
+xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner \
+  -configuration Debug -derivedDataPath build/macos \
+  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+```
+
+The resulting bundle is `build/macos/Build/Products/Debug/Vizor.app`.
+
 Alternatively configure the full `/v1/forecast` URL of a trusted HTTPS service.
 Only HTTPS and numeric loopback HTTP endpoints are accepted. This build does
 not create a tunnel, expose the observer publicly, or deploy a service. Tor

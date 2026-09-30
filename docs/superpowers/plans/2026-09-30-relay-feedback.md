@@ -59,8 +59,8 @@
 
 - [x] Add integration tests for all returned IDs, disabled behavior and pending activity rendering; observe failure.
 - [x] Wire the panel into desktop/mobile surfaces and retain existing wallet semantics.
-- [ ] Run focused tests, desktop suite, mobile tests for changed surfaces, analysis, and compile a desktop build where the toolchain permits.
-- [ ] Review the whole branch, fix material findings with regression tests, commit and push the experiment branch.
+- [x] Run focused tests, desktop suite, mobile tests for changed surfaces, analysis, and compile a desktop build where the toolchain permits.
+- [x] Review the whole branch, fix material findings with regression tests, commit and push the experiment branch.
 
 ## Decisions and progress
 
@@ -73,3 +73,12 @@
 - Validation so far: 104 focused desktop/protocol/transport tests, 52 mobile tests, analyzer clean, and rendered consent/observation panels inspected.
 - The initial full desktop run passed 4,858 tests with 136 intentional skips and one receive QR-save failure. The same QR-save test also fails in a separate untouched upstream worktree; no receive code is changed.
 - Native debug compilation uses unsigned Xcode settings because the upstream macOS development profile is unavailable on this host. No wallet is launched by validation.
+
+## Final validation
+
+- Code reviewed and committed as `f6667bb`; source branch pushed to `zmanian/vizor-wallet:experiment/relay-wallet-api`.
+- 104 focused protocol, transport and desktop integration tests passed; 52 changed-surface mobile tests passed; `fvm flutter analyze` reported no issues.
+- Final full desktop lane: 4,865 passed, 136 intentionally skipped, two receive-screen QR-save tests failed. The same unchanged receive test file passed all 28 tests in isolation on both this branch and the upstream base. An earlier isolated upstream QR-save run also failed. Its helper waits a fixed 200 ms for asynchronous image saving; these results are recorded as intermittent baseline/environment failures, not a clean full-suite pass. No receive code was changed.
+- Consent and observation panels rendered with real fonts and deterministic fixtures; images inspected locally. No live wallet, funded transfer, or remote observer deployment was used for validation.
+- Unsigned native macOS Debug build succeeded using CocoaPods 1.16.2 from the repository pin, with `CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO`. The Podfile lock is unchanged.
+- Local artifact: `build/macos/Build/Products/Debug/Vizor.app`. The compiled endpoint is the local tunnel `http://127.0.0.1:18790/v1/forecast`; the build does not create that tunnel. README includes activation and unsigned build commands.
