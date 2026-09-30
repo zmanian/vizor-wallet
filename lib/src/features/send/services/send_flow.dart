@@ -607,6 +607,7 @@ class SendBroadcastOutcome {
     required this.phase,
     required this.proposalConsumed,
     this.txid,
+    this.txids = const [],
     this.statusMessage,
     this.error,
   });
@@ -618,6 +619,10 @@ class SendBroadcastOutcome {
   /// here unless the phase is [SendBroadcastPhase.aborted].
   final bool proposalConsumed;
   final String? txid;
+
+  /// Every display-order ID produced by the send, including a multi-tx batch.
+  final List<String> txids;
+  List<String> get trackingTxids => txids.isNotEmpty ? txids : [?txid];
   final String? statusMessage;
   final String? error;
 }
@@ -1081,6 +1086,9 @@ Future<SendBroadcastOutcome> _runSendBroadcast({
           : SendBroadcastPhase.pendingBroadcast,
       proposalConsumed: proposalConsumed,
       txid: receiptTxid,
+      txids: List.unmodifiable(
+        txids.split(',').map((id) => id.trim()).where((id) => id.isNotEmpty),
+      ),
       statusMessage: pendingStatusMessage,
       error: broadcastExpired
           ? 'The hardware signing request expired before broadcast. Return to your wallet, wait for sync, then review the payment and try again.'

@@ -34,6 +34,7 @@ import 'package:zcash_wallet/src/rust/api/sync.dart';
 import 'package:zcash_wallet/src/rust/frb_generated.dart';
 
 import '../../fakes/fake_zec_market_data_cache.dart';
+import 'package:zcash_wallet/src/features/relay_feedback/relay_feedback_panel.dart';
 
 void main() {
   final rustApi = _RustApiFake();
@@ -88,6 +89,30 @@ void main() {
     expect(rustApi.macosExecuteCalls, Platform.isMacOS ? 1 : 0);
     expect(rustApi.mnemonicExecuteCalls, Platform.isMacOS ? 0 : 1);
     expect(_sendStatusTerminal(tester), isTrue);
+  });
+
+  testWidgets('relay receipt preserves every broadcast transaction ID', (
+    tester,
+  ) async {
+    const secondTxid =
+        'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789';
+    rustApi.executeResult = ExecuteProposalResult(
+      txids: '$_txid, $secondTxid',
+      status: 'broadcasted',
+      broadcastedCount: 2,
+      totalCount: 2,
+    );
+    await _setDesktopViewport(tester);
+    await tester.pumpWidget(_harness(_reviewArgs()));
+    await tester.pump();
+    await _flushBroadcast(tester);
+    final panel = tester.widget<RelayFeedbackPanel>(
+      find.byType(RelayFeedbackPanel),
+    );
+    expect(panel.displayTxids, [_txid, secondTxid]);
+    expect(panel.accountUuid, _reviewArgs().proposalAccountUuid);
+    expect(find.text('Enable relay feedback'), findsNothing);
+    expect(find.text('Sent successfully'), findsOneWidget);
   });
 
   testWidgets('a whitespace-only memo keeps its Message row on the receipt', (

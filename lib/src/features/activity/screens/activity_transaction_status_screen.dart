@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../relay_feedback/relay_feedback_panel.dart';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -734,7 +735,25 @@ class _ActivityTransactionStatusScreenState
       child: AppPaneScrollScaffold(
         toolbar: const AppPaneToolbar(backLinkMinWidth: 60),
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        child: content,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            content,
+            RelayFeedbackPanel(
+              accountUuid: _activeAccountUuid,
+              displayTxids: [
+                zcashDisplayTxidHex(
+                  widget.args.txidHex,
+                  ZcashExplorerTxidOrder.protocol,
+                ),
+              ],
+              active:
+                  _transaction != null &&
+                  _transaction!.minedHeight == BigInt.zero &&
+                  !_transaction!.expiredUnmined,
+            ),
+          ],
+        ),
       ),
     );
   }

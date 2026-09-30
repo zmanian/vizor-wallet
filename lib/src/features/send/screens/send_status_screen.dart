@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../relay_feedback/relay_feedback_panel.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -80,6 +81,7 @@ class _SendStatusScreenState extends ConsumerState<SendStatusScreen> {
   String? _error;
   String? _statusMessage;
   String? _txid;
+  List<String> _relayTxids = const [];
   late final DateTime _startedAt = DateTime.now();
   DateTime? _completedAt;
   bool _showSaplingParamsPrompt = false;
@@ -246,6 +248,7 @@ class _SendStatusScreenState extends ConsumerState<SendStatusScreen> {
         SendBroadcastPhase.aborted => _SendStatusPhase.failed,
       };
       _txid = outcome.txid;
+      _relayTxids = outcome.trackingTxids;
       _statusMessage = outcome.statusMessage;
       _error = outcome.error;
       if (outcome.phase != SendBroadcastPhase.failed) {
@@ -382,48 +385,66 @@ class _SendStatusScreenState extends ConsumerState<SendStatusScreen> {
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.md,
                       ),
-                      child: SendStatusContentView(
-                        key: ValueKey('send_status_${statusPhase.name}'),
-                        phase: statusPhase,
-                        titleOverride: isDonation
-                            ? switch (_phase) {
-                                _SendStatusPhase.failed => 'Donation failed',
-                                _ => 'Donation in progress...',
-                              }
-                            : null,
-                        amountText: _formatAmount(widget.args.amountZatoshi),
-                        fiatText: fiatTextForZatoshi(
-                          widget.args.amountZatoshi,
-                          zecUsdUnitPrice: zecUsdUnitPrice,
-                        ),
-                        recipient: recipient,
-                        timestampText: formatDayMonthTime(
-                          _completedAt ?? _startedAt,
-                        ),
-                        txIdText: _txid == null ? null : truncatedTxid(_txid!),
-                        feeText: _formatFee(widget.args.feeZatoshi),
-                        isShieldedRecipient: widget.args.isShielded,
-                        recipientAddressType: widget.args.addressType,
-                        recipientRow: isDonation
-                            ? DonationRecipientInfoRow(
-                                struckThrough:
-                                    _phase == _SendStatusPhase.failed,
-                              )
-                            : null,
-                        memoText: hasMemo ? memo : null,
-                        memoExpanded: _messageExpanded,
-                        noticeText: _phase == _SendStatusPhase.failed
-                            ? (_error ?? 'Send failed')
-                            : _statusMessage,
-                        onShowFullAddress: isDonation
-                            ? null
-                            : () => setState(() => _showVerifyAddress = true),
-                        onExpandMemo: () => setState(
-                          () => _messageExpanded = !_messageExpanded,
-                        ),
-                        onOpenExplorer: canOpenExplorer
-                            ? _openTransactionExplorer
-                            : null,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SendStatusContentView(
+                            key: ValueKey('send_status_${statusPhase.name}'),
+                            phase: statusPhase,
+                            titleOverride: isDonation
+                                ? switch (_phase) {
+                                    _SendStatusPhase.failed =>
+                                      'Donation failed',
+                                    _ => 'Donation in progress...',
+                                  }
+                                : null,
+                            amountText: _formatAmount(
+                              widget.args.amountZatoshi,
+                            ),
+                            fiatText: fiatTextForZatoshi(
+                              widget.args.amountZatoshi,
+                              zecUsdUnitPrice: zecUsdUnitPrice,
+                            ),
+                            recipient: recipient,
+                            timestampText: formatDayMonthTime(
+                              _completedAt ?? _startedAt,
+                            ),
+                            txIdText: _txid == null
+                                ? null
+                                : truncatedTxid(_txid!),
+                            feeText: _formatFee(widget.args.feeZatoshi),
+                            isShieldedRecipient: widget.args.isShielded,
+                            recipientAddressType: widget.args.addressType,
+                            recipientRow: isDonation
+                                ? DonationRecipientInfoRow(
+                                    struckThrough:
+                                        _phase == _SendStatusPhase.failed,
+                                  )
+                                : null,
+                            memoText: hasMemo ? memo : null,
+                            memoExpanded: _messageExpanded,
+                            noticeText: _phase == _SendStatusPhase.failed
+                                ? (_error ?? 'Send failed')
+                                : _statusMessage,
+                            onShowFullAddress: isDonation
+                                ? null
+                                : () =>
+                                      setState(() => _showVerifyAddress = true),
+                            onExpandMemo: () => setState(
+                              () => _messageExpanded = !_messageExpanded,
+                            ),
+                            onOpenExplorer: canOpenExplorer
+                                ? _openTransactionExplorer
+                                : null,
+                          ),
+                          RelayFeedbackPanel(
+                            accountUuid: widget.args.proposalAccountUuid,
+                            displayTxids: _relayTxids,
+                            active:
+                                _phase == _SendStatusPhase.succeeded ||
+                                _phase == _SendStatusPhase.pendingBroadcast,
+                          ),
+                        ],
                       ),
                     ),
                     if (_showVerifyAddress)

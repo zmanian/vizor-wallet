@@ -16,6 +16,7 @@ import 'package:zcash_wallet/src/rust/frb_generated.dart';
 import 'package:zcash_wallet/src/providers/sync_provider.dart';
 
 import '../../fakes/fake_sync_notifier.dart';
+import 'package:zcash_wallet/src/features/relay_feedback/relay_feedback_panel.dart';
 
 const _address =
     'u1l8xunezsvhq8fgzfl7404m450nwnd76zshe7f5dxv5z3w4gthawuwukdn5aalh6g'
@@ -137,6 +138,36 @@ void main() {
     binding.platformDispatcher.views.first
       ..physicalSize = const Size(520, 1100)
       ..devicePixelRatio = 1.0;
+  });
+
+  testWidgets('mobile relay receipt retains the full send batch', (
+    tester,
+  ) async {
+    const ids = [
+      '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+      'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789',
+    ];
+    await tester.pumpWidget(
+      _app(
+        broadcastRunner: _runner(
+          Future.value(
+            SendBroadcastOutcome(
+              phase: SendBroadcastPhase.succeeded,
+              proposalConsumed: true,
+              txid: ids.first,
+              txids: ids,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    final panel = tester.widget<RelayFeedbackPanel>(
+      find.byType(RelayFeedbackPanel),
+    );
+    expect(panel.displayTxids, ids);
+    expect(panel.accountUuid, 'account-1');
+    expect(find.text('Enable relay feedback'), findsNothing);
   });
 
   testWidgets('sending phase shows the spinner state with no exit button', (

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../relay_feedback/relay_feedback_panel.dart';
 
 import 'package:flutter/material.dart' show Scaffold;
 import 'package:flutter/services.dart';
@@ -702,6 +703,19 @@ class _MobileTransactionStatusScreenState
                           giftCard: giftCard,
                           privacyModeEnabled: privacyModeEnabled,
                         ),
+                      ),
+                      RelayFeedbackPanel(
+                        accountUuid: _activeAccountUuid,
+                        displayTxids: [
+                          zcashDisplayTxidHex(
+                            widget.args.txidHex,
+                            ZcashExplorerTxidOrder.protocol,
+                          ),
+                        ],
+                        active:
+                            tx != null &&
+                            tx.minedHeight == BigInt.zero &&
+                            !tx.expiredUnmined,
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: AppSpacing.sm),

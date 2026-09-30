@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../relay_feedback/relay_feedback_panel.dart';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,6 +62,7 @@ class _MobileSendStatusScreenState
   /// completion to the terminal flag instead of a release of its own.
   Future<SendBroadcastOutcome>? _broadcast;
   String? _statusMessage;
+  List<String> _relayTxids = const [];
 
   /// Captured in [initState] so [dispose] can release the flag without reading
   /// from `ref` after the element is gone.
@@ -158,6 +160,7 @@ class _MobileSendStatusScreenState
         SendBroadcastPhase.aborted => _MobileSendStatusPhase.failed,
       };
       _statusMessage = outcome.statusMessage;
+      _relayTxids = outcome.trackingTxids;
     });
     // Success and failure use custom native haptic patterns without system
     // notification sounds.
@@ -260,6 +263,13 @@ class _MobileSendStatusScreenState
       phase: _presentationPhase,
       title: _title,
       body: _subtitle,
+      supportingContent: RelayFeedbackPanel(
+        accountUuid: widget.args.proposalAccountUuid,
+        displayTxids: _relayTxids,
+        active:
+            _phase == _MobileSendStatusPhase.succeeded ||
+            _phase == _MobileSendStatusPhase.pendingBroadcast,
+      ),
       bodyMaxWidth: _phase == _MobileSendStatusPhase.pendingBroadcast
           ? null
           : _statusSubtitleWidth,

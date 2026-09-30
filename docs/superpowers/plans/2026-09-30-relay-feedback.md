@@ -37,9 +37,9 @@
 
 **Interfaces:** `RelayTransaction(network, txid)` with boundary factory; `RelayForecast.fromJson(data, transaction, now)`; `RelayForecastClient.fetch(transaction, cancelSignal)` returning a typed observation. Endpoint and response identity validation live here.
 
-- [ ] Write tests for network/ID normalization, stale/malformed responses, research forecast withholding, valid cumulative probabilities and routed POST payload.
-- [ ] Observe failures, implement the types/client, then run `fvm flutter test test/features/relay_feedback`.
-- [ ] Commit the tested protocol/client.
+- [x] Write tests for network/ID normalization, stale/malformed responses, research forecast withholding, valid cumulative probabilities and routed POST payload.
+- [x] Observe failures, implement the types/client, then run `fvm flutter test test/features/relay_feedback`.
+- [x] Commit the tested protocol/client.
 
 ### Task 2: Shared lifecycle tracking and consent panel
 
@@ -47,9 +47,9 @@
 
 **Interfaces:** Panel accepts account UUID and display-order IDs, with an explicit active/pending flag. Providers share one watcher per account/network/txid. Consent is session-local. The panel hides before reading wallet providers when unconfigured.
 
-- [ ] Write tests proving no request before consent, shared watching, cancellation/late-response suppression, unavailable fallbacks and inclusion-to-pending transitions.
-- [ ] Implement bounded serial polling and the accessible panel; run the focused tests.
-- [ ] Commit the tested watcher and panel.
+- [x] Write tests proving no request before consent, shared watching, cancellation/late-response suppression, unavailable fallbacks and inclusion-to-pending transitions.
+- [x] Implement bounded serial polling and the accessible panel; run the focused tests.
+- [x] Commit the tested watcher and panel.
 
 ### Task 3: Integrate send and activity screens
 
@@ -57,8 +57,8 @@
 
 **Interfaces:** Send outcomes retain every returned ID without changing broadcast behavior. Activity callers explicitly convert protocol-order IDs. Wallet-reported mined/expired transactions stop requesting forecasts.
 
-- [ ] Add integration tests for all returned IDs, disabled behavior and pending activity rendering; observe failure.
-- [ ] Wire the panel into desktop/mobile surfaces and retain existing wallet semantics.
+- [x] Add integration tests for all returned IDs, disabled behavior and pending activity rendering; observe failure.
+- [x] Wire the panel into desktop/mobile surfaces and retain existing wallet semantics.
 - [ ] Run focused tests, desktop suite, mobile tests for changed surfaces, analysis, and compile a desktop build where the toolchain permits.
 - [ ] Review the whole branch, fix material findings with regression tests, commit and push the experiment branch.
 
@@ -66,3 +66,10 @@
 
 - User's direct build instruction authorizes implementation of the presented design without another approval round.
 - The existing isolated fork checkout is clean at upstream 4bff2e7. No observer infrastructure or wallet funds are changed.
+
+- Independent review found five important edge cases, all fixed: redirect replay, truncated wallet history, persisted network mismatch, display freshness expiry, and Tor bootstrap timeout.
+- The relay client opts out of redirects through a new optional transport argument; existing clients keep the previous default.
+- Terminal wallet evidence persists for the unlocked account session and resumes only on explicit wallet pending evidence.
+- Validation so far: 104 focused desktop/protocol/transport tests, 52 mobile tests, analyzer clean, and rendered consent/observation panels inspected.
+- The initial full desktop run passed 4,858 tests with 136 intentional skips and one receive QR-save failure. The same QR-save test also fails in a separate untouched upstream worktree; no receive code is changed.
+- Native debug compilation uses unsigned Xcode settings because the upstream macOS development profile is unavailable on this host. No wallet is launched by validation.

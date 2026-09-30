@@ -24,6 +24,63 @@ Official public releases currently focus on signed and notarized macOS DMGs.
   UI.
 - Protect local access with an app password and privacy mode.
 
+## Relay feedback experiment
+
+The `experiment/relay-wallet-api` branch adds optional relay observations to
+send receipts and pending transaction details on desktop and mobile. It is a
+research integration. Build without `VIZOR_RELAY_API_URL` to disable it.
+
+To try it against an already established local tunnel to the observer API:
+
+```bash
+fvm flutter pub get
+fvm flutter run -d macos \
+  --dart-define=ZCASH_DEFAULT_NETWORK=main \
+  --dart-define=VIZOR_RELAY_API_URL=http://127.0.0.1:18790/v1/forecast
+```
+
+Alternatively configure the full `/v1/forecast` URL of a trusted HTTPS service.
+Only HTTPS and numeric loopback HTTP endpoints are accepted. This build does
+not create a tunnel, expose the observer publicly, or deploy a service. Tor
+mode continues to use Tor and fails closed; a local tunnel is not reachable
+through a remote Tor exit. Use a reachable HTTPS service for Tor testing.
+
+On an unlocked send receipt or pending activity screen, choose **Enable relay
+feedback**. Consent lasts for the app session and resets on lock or account
+change. **Stop relay feedback** turns it off. Requests contain only the network
+and display-order transaction ID; the service can still associate requests and
+see the connection IP unless Tor is in use. No addresses, amounts, memos, wallet
+identifiers, keys, or telemetry are sent by this feature.
+
+The panel distinguishes not yet observed, seen, inclusion reported, expiry
+reported, and unavailable. Only the wallet confirms transactions and decides
+spendability. Every ID in a multi-transaction send is tracked independently.
+Numerical estimates require the API to explicitly report a validated,
+non-synthetic, non-shadow model with a valid cumulative distribution; the
+current research/shadow responses therefore show observations without
+percentages. No arrival-time countdown or expiry prediction is invented.
+
+Polling is shared across views of the same transaction, starts after the send
+runner returns its broadcast result, and stops while the app is backgrounded,
+the route is covered, the account is locked/switched, or the wallet reports the
+transaction mined/expired. Wallet reorgs can resume tracking. Each visible watch
+lasts at most one hour; requests time out after three seconds, start at one-second
+intervals, settle to five seconds, and back off to fifteen seconds after errors.
+This version does not establish a 100 ms broadcast-to-feedback latency claim.
+
+Focused checks:
+
+```bash
+fvm flutter test test/features/relay_feedback \
+  test/features/send/send_status_screen_test.dart \
+  test/features/activity/activity_transaction_status_screen_test.dart
+fvm flutter test --tags mobile --run-skipped \
+  --dart-define=VIZOR_FORM_FACTOR=mobile \
+  test/features/send/mobile_send_status_screen_test.dart \
+  test/features/activity/mobile_transaction_status_screen_test.dart \
+  test/core/widgets/mobile/mobile_transaction_progress_screen_test.dart
+```
+
 ## Build From Source
 
 Use the release tag that matches the DMG you want to verify:

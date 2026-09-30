@@ -29,6 +29,7 @@ import 'package:zcash_wallet/src/providers/sync_provider.dart';
 import 'package:zcash_wallet/src/rust/api/sync.dart' as rust_sync;
 
 import '../../fakes/fake_sync_notifier.dart';
+import 'package:zcash_wallet/src/features/relay_feedback/relay_feedback_panel.dart';
 
 String _reverseHexBytes(String hex) {
   final bytes = [
@@ -195,6 +196,27 @@ Widget _app(
 }
 
 void main() {
+  for (final mined in [false, true]) {
+    testWidgets('relay activity uses display IDs and respects mined=$mined', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(393, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        _app(_tx(kind: 'sent', minedHeight: mined ? BigInt.one : BigInt.zero)),
+      );
+      await tester.pump();
+      final panel = tester.widget<RelayFeedbackPanel>(
+        find.byType(RelayFeedbackPanel),
+      );
+      expect(panel.displayTxids, [
+        'efcdab8967452301efcdab8967452301efcdab8967452301efcdab8967452301',
+      ]);
+      expect(panel.active, !mined);
+      expect(find.text('Enable relay feedback'), findsNothing);
+    });
+  }
+
   testWidgets('pending claim transaction ID opens the broadcast hash', (
     tester,
   ) async {
@@ -319,9 +341,7 @@ void main() {
   });
 
   for (final fee in [0, 15000]) {
-    testWidgets('redeemed card shows no fee row with fee $fee', (
-      tester,
-    ) async {
+    testWidgets('redeemed card shows no fee row with fee $fee', (tester) async {
       await tester.binding.setSurfaceSize(const Size(393, 1000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(

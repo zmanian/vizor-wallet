@@ -278,6 +278,7 @@ class NetworkHttpClient {
     List<int> bodyBytes = const [],
     Duration? timeout,
     Future<void>? cancelSignal,
+    bool followRedirects = true,
   }) {
     _requirePositiveTimeout(timeout);
     final normalizedMethod = method.toUpperCase();
@@ -289,6 +290,7 @@ class NetworkHttpClient {
             bodyBytes: bodyBytes,
             timeout: timeout,
             cancelSignal: cancelSignal,
+            followRedirects: followRedirects,
           )
         : _runDirectRequest(
             () => _requestDirect(
@@ -298,6 +300,7 @@ class NetworkHttpClient {
               bodyBytes: bodyBytes,
               timeout: timeout,
               cancelSignal: cancelSignal,
+              followRedirects: followRedirects,
             ),
           );
   }
@@ -309,6 +312,7 @@ class NetworkHttpClient {
     required List<int> bodyBytes,
     required Duration? timeout,
     required Future<void>? cancelSignal,
+    required bool followRedirects,
   }) async {
     try {
       return await _requestViaTorWithRedirects(
@@ -318,6 +322,7 @@ class NetworkHttpClient {
         bodyBytes: bodyBytes,
         timeout: timeout,
         cancelSignal: cancelSignal,
+        followRedirects: followRedirects,
       );
     } on TimeoutException {
       if (method != 'GET') rethrow;
@@ -330,6 +335,7 @@ class NetworkHttpClient {
         bodyBytes: bodyBytes,
         timeout: timeout,
         cancelSignal: cancelSignal,
+        followRedirects: followRedirects,
       );
     }
   }
@@ -416,6 +422,7 @@ class NetworkHttpClient {
     String? destinationPath,
     required Duration? timeout,
     required Future<void>? cancelSignal,
+    bool followRedirects = true,
   }) async {
     if (method != 'GET' && method != 'POST') {
       throw TorUnsupportedHttpMethodException(method);
@@ -456,7 +463,9 @@ class NetworkHttpClient {
             );
       if (!stopwatch.isRunning) stopwatch.start();
       final location = response.header(HttpHeaders.locationHeader);
-      if (!_isRedirect(response.statusCode) || location == null) {
+      if (!followRedirects ||
+          !_isRedirect(response.statusCode) ||
+          location == null) {
         return response;
       }
       if (redirectCount == 5) {
@@ -489,6 +498,7 @@ class NetworkHttpClient {
     required List<int> bodyBytes,
     required Duration? timeout,
     required Future<void>? cancelSignal,
+    required bool followRedirects,
   }) {
     HttpClientRequest? activeRequest;
     StreamSubscription<List<int>>? responseSubscription;
@@ -514,6 +524,7 @@ class NetworkHttpClient {
       try {
         final request = await _directClient.openUrl(method, uri);
         activeRequest = request;
+        request.followRedirects = followRedirects;
         final pendingError = terminationError;
         if (pendingError != null) {
           final error = pendingError;

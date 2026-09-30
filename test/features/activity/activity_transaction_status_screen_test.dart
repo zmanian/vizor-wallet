@@ -28,6 +28,7 @@ import 'package:zcash_wallet/src/providers/sync_provider.dart';
 import 'package:zcash_wallet/src/rust/api/sync.dart' as rust_sync;
 
 import '../../fakes/fake_sync_notifier.dart';
+import 'package:zcash_wallet/src/features/relay_feedback/relay_feedback_panel.dart';
 import '../../figma_compare/figma_compare_font_loader.dart';
 
 const _txidHex =
@@ -503,6 +504,13 @@ void main() {
     );
 
     expect(find.byType(ReceivedReceiptView), findsOneWidget);
+    final panel = tester.widget<RelayFeedbackPanel>(
+      find.byType(RelayFeedbackPanel),
+    );
+    expect(panel.active, isTrue);
+    expect(panel.displayTxids, [
+      'efcdab8967452301efcdab8967452301efcdab8967452301efcdab8967452301',
+    ]);
     expect(find.text('Receive in progress...'), findsOneWidget);
     expect(find.text('In progress'), findsOneWidget);
     expect(find.text('Received successfully'), findsNothing);
